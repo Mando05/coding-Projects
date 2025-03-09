@@ -132,45 +132,62 @@ from kivy.graphics import Color, Rectangle
 class HomeScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        layout = BoxLayout(orientation='vertical', padding = 50, spacing = 0)
         
         # Set background color
         with layout.canvas.before:
-            Color(1, 1, 1, 1)  # White color
+            Color(1, 1, 1, 1)  # White background
             self.rect = Rectangle(size=layout.size, pos=layout.pos)
         layout.bind(size=self._update_rect, pos=self._update_rect)
 
-        # Search Bar
-        search_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=50, spacing=10)
+        # Centered Search Bar
+        float_layout = FloatLayout(size_hint=(1, 1))
+        search_layout = BoxLayout(orientation='horizontal', size_hint=(None, None), size=(400, 58), spacing=10, pos_hint={'center_x': 0.5, 'center_y': 0.9})
         self.search_input = TextInput(multiline=False, hint_text="Search plants/crops", size_hint_x=0.8, padding=(10, 10))
-        search_button = Button(text="Search", size_hint_x=0.2, background_color=(0.1, 0.6, 0.2, 1))
+        search_button = Button(text="Search", size_hint_x=0.2, size_hint_y=None, height=58, width=108, background_color=(0.1, 0.6, 0.2, 1))
         search_button.bind(on_press=self.search_plant)
         search_layout.add_widget(self.search_input)
         search_layout.add_widget(search_button)
-        layout.add_widget(search_layout)
+        float_layout.add_widget(search_layout)
+        layout.add_widget(float_layout)
 
-        # Scrollable Grid Layout for Plants
+        # Scrollable Vertical List
         scroll_view = ScrollView()
-        plant_grid = GridLayout(cols=2, spacing=10, size_hint_y=None, padding=5)
-        plant_grid.bind(minimum_height=plant_grid.setter('height'))
+        plant_list = BoxLayout(orientation='vertical', size_hint_y=None, padding=[5, 0, 5, 0], spacing=10,
+                                 pos_hint={'center_x': 0.5})  # Center the content horizontally
+        plant_list.bind(minimum_height=plant_list.setter('height'))
 
         for plant_name in plant_data:
-            plant_card = Button(text=plant_name, size_hint_y=None, height=100, background_color=(0.2, 0.8, 0.4, 1),
-                                 font_size=18, padding=(10, 10),
-                                background_normal='', background_down='')
+            plant_card = Button(
+                text=plant_name,
+                size_hint_x=None,  # Let the width be determined by the content
+                width=300,  # Set a fixed width for the button
+                size_hint_y=None,
+                height=100,
+                background_color=(0.2, 0.8, 0.4, 1),
+                font_size=18,
+                padding=(10, 10),
+                background_normal='',
+                background_down=''
+            )
             plant_card.bind(on_press=lambda _, name=plant_name: self.show_plant_info(name))
-            plant_grid.add_widget(plant_card)
+            plant_list.add_widget(plant_card)
 
-        scroll_view.add_widget(plant_grid)
+        scroll_view.add_widget(plant_list)
         layout.add_widget(scroll_view)
 
         # Floating Add Button
         float_layout = FloatLayout()
-        add_button = Button(text='+', size_hint=(None, None), size=(60, 60),
-                            pos_hint={'right': 0.95, 'y': 0.05},
-                            background_color=(0.9, 0.2, 0.2, 1),
-                             font_size=24,
-                            background_normal='', background_down='')
+        add_button = Button(
+            text='+',
+            size_hint=(None, None),
+            size=(60, 60),
+            pos_hint={'right': 0.95, 'y': 0.05},
+            background_color=(0.9, 0.2, 0.2, 1),
+            font_size=24,
+            background_normal='',
+            background_down=''
+        )
         add_button.bind(on_press=lambda _: setattr(self.manager, 'current', 'add_plant'))
         float_layout.add_widget(add_button)
         layout.add_widget(float_layout)
@@ -197,8 +214,6 @@ class HomeScreen(Screen):
         # If not found, prompt user to add the plant
         self.manager.get_screen('add_plant').set_plant_name(self.search_input.text.strip())
         self.manager.current = 'add_plant'
-
-
 
 class PlantInfoScreen(Screen):
     def __init__(self, **kwargs):
