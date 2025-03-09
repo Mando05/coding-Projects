@@ -9,15 +9,24 @@ from kivy.uix.image import Image
 
 # Sample plant and crop data
 plant_data = {
-    "Aloe Vera": {"image": "images/alo vera.jpg", "soil": "Sandy, well-draining", "water": "Infrequent", "sunlight": "Full to partial", "origin": "Arabian Peninsula"},
-    "Tomato": {"image": "", "soil": "Loamy, well-drained", "water": "Regular", "sunlight": "Full", "origin": "South America"},
-    "Cactus": {"image": "image/Cactus.jpg", "soil": "Sandy, well-drained", "water": "Very infrequent", "sunlight": "Full", "origin": "Americas"},
-    "Lettuce": {"image": "", "soil": "Loamy, well-drained", "water": "Regular", "sunlight": "Partial", "origin": "Mediterranean"},
+    "Aloe Vera": {"family": "Asphodelaceae", "image": "images/alo vera.jpg", "soil": "Sandy, well-draining", "water": "Infrequent", "sunlight": "Full to partial", "origin": "Arabian Peninsula"},
+    "Haworthia": {"family": "Asphodelaceae", "image": "images/Hawt.jpg", "soil": "Sandy, well-draining", "water": "Infrequent", "sunlight": "Partial shade", "origin": "South Africa"},
+    "Gasteria": {"family": "Asphodelaceae", "image": "images/Gast.jpg", "soil": "Sandy, well-draining", "water": "Infrequent", "sunlight": "Partial shade", "origin": "South Africa"},
+    "Bulbine": {"family": "Asphodelaceae", "image": "images/Bulbine.jpg", "soil": "Well-draining", "water": "Infrequent", "sunlight": "Full sun", "origin": "South Africa"},
+    "Tomato": {"family": "Solanaceae", "image": "images/Tomato.jpg", "soil": "Loamy, well-drained", "water": "Regular", "sunlight": "Full", "origin": "South America"},
+    "Potato": {"family": "Solanaceae", "image": "images/Potato.jpg", "soil": "Sandy, well-drained", "water": "Regular", "sunlight": "Full", "origin": "South America"},
+    "Eggplant": {"family": "Solanaceae", "image": "images/Eggplant.jpg", "soil": "Loamy, well-drained", "water": "Regular", "sunlight": "Full", "origin": "India"},
+    "Pepper": {"family": "Solanaceae", "image": "images/Bellpeper.jpg", "soil": "Loamy, well-drained", "water": "Regular", "sunlight": "Full", "origin": "South America"},
+    "Cactus": {"family": "Cactaceae", "image": "images/Cactus.jpg", "soil": "Sandy, well-drained", "water": "Very infrequent", "sunlight": "Full", "origin": "Americas"},
+    "Opuntia": {"family": "Cactaceae", "image": "images/Tuna.jpg", "soil": "Sandy, well-drained", "water": "Very infrequent", "sunlight": "Full", "origin": "Americas"},
+    "Echinocactus": {"family": "Cactaceae", "image": "images/Mini.jpg", "soil": "Sandy, well-drained", "water": "Very infrequent", "sunlight": "Full", "origin": "Mexico"},
+    "Mammillaria": {"family": "Cactaceae", "image": "images/chunky.jpg", "soil": "Sandy, well-drained", "water": "Very infrequent", "sunlight": "Full", "origin": "Mexico"},
+    "Lettuce": {"family": "Asteraceae", "image": "images/Lettuce.jpg", "soil": "Loamy, well-drained", "water": "Regular", "sunlight": "Partial", "origin": "Mediterranean"},
+    "Sunflower": {"family": "Asteraceae", "image": "images/sunflower.jpg", "soil": "Well-drained", "water": "Moderate", "sunlight": "Full", "origin": "North America"},
+    "Marigold": {"family": "Asteraceae", "image": "images/mari.jpg", "soil": "Well-drained", "water": "Moderate", "sunlight": "Full", "origin": "Americas"},
+    "Zinnia": {"family": "Asteraceae", "image": "images/zin.jpeg", "soil": "Well-drained", "water": "Moderate", "sunlight": "Full", "origin": "Mexico"},
 }
-def display_plant(self, plant_name):
-    plant = plant_data[plant_name]
-    self.info_label.text = f"Soil: {plant['soil']}\nWater: {plant['water']}"
-    self.image.source = plant['image/alo vera.jpg']
+
 
 class HomeScreen(Screen):
     def __init__(self, **kwargs):
@@ -77,7 +86,16 @@ class PlantInfoScreen(Screen):
 
     def display_plant(self, plant_name):
         plant = plant_data[plant_name]
-        self.info_label.text = f"Soil: {plant['soil']}\nWater: {plant['water']}"
+        self.info_label.text = (
+            f"Soil: {plant['soil']}\n"
+            f"Water: {plant['water']}\n"
+            f"Sunlight: {plant['sunlight']}\n"
+            f"Origin: {plant['origin']}"
+        )
+        if plant['image']:
+            self.image.source = plant['image']
+        else:
+            self.image.source = 'image/no_image_available.png'
 
 class CropScreen(Screen):
     def __init__(self, **kwargs):
