@@ -1,3 +1,8 @@
+import threading
+import time
+from rpy_flask import send_integers_to_rpi
+
+
 from kivy.app import App
 from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
@@ -277,8 +282,8 @@ class WaterCalcScreen(Screen):
         layout.add_widget(self.result_label)
 
         # Placeholder Button - Prints "Hello" to terminal when clicked
-        placeholder_button = Button(text="Click Me", size_hint_y=None, height=50)
-        placeholder_button.bind(on_press=lambda _: print("Hello"))
+        placeholder_button = Button(text="Set Automated Water", size_hint_y=None, height=50)
+        placeholder_button.bind(on_press=lambda _: send_integers_to_rpi(1,1))
         layout.add_widget(placeholder_button)
 
         self.add_widget(layout)
