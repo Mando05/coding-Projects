@@ -1,10 +1,10 @@
 [app]
 
 # (str) Title of your application
-title = My Application
+title = CultivateGro
 
 # (str) Package name
-package.name = myapp
+package.name = test_kivy.py
 
 # (str) Package domain (needed for android/ios packaging)
 package.domain = org.test
@@ -16,7 +16,7 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
 
 # (list) List of inclusions using pattern matching
-#source.include_patterns = assets/*,images/*.png
+#source.include_patterns = images/*
 
 # (list) Source files to exclude (let empty to not exclude anything)
 #source.exclude_exts = spec
