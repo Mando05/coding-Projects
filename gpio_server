@@ -1,0 +1,53 @@
+from flask import Flask, request, jsonify
+from gpiozero import DigitalOutputDevice, Button
+import time
+
+relayPin = 17     # define the relayPin
+buttonPin = 18    # define the buttonPin
+relay = DigitalOutputDevice(relayPin)     # define relay pin according to BCM numbering
+button = Button(buttonPin)  # define Button pin according to BCM numbering
+on = False  # global variable to track relay state
+
+app = Flask(__name__)
+
+@app.route('/send_integers', methods=['POST'])
+def recieve_integers():
+    global on  # Declare the variable 'on' as global
+    try:
+        data = request.get_json()  # Get JSON data from the request
+        num1 = data.get('num1')
+        num2 = data.get('num2')
+        relay.toggle()  # Toggle relay state
+        return jsonify({"message": f"Received numbers: {num1}, {num2}"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/motor/off')
+def motor_off():
+    global on  # Declare the variable 'on' as global
+    if on:
+        relay.toggle()
+        on = False
+        return "Motor is now OFF"
+    else:
+        return "Motor is already OFF"
+
+def onButtonPressed():  # When button is pressed, this function will be executed
+    relay.toggle()
+    if relay.value:
+        print("Turn on relay ...")
+    else:
+        print("Turn off relay ...")
+
+# Function to clean up and release GPIO resources
+def destroy():
+    relay.close()
+    button.close()
+
+# Main entry point
+if __name__ == '__main__':
+    print('Program is starting...')
+    try:
+        app.run(host='0.0.0.0', port=5000)
+    finally:
+        destroy()
