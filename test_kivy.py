@@ -293,7 +293,7 @@ class WaterCalcScreen(Screen):
             self.result_label.text = "Invalid input"
 
 
-class CultivateGro(App):
+class CultiGro(App):
     def build(self):
         sm = ScreenManager()
 
@@ -320,4 +320,4 @@ class CultivateGro(App):
 
 
 if __name__ == '__main__':
-    CultivateGro().run()
+    CultiGro().run()
