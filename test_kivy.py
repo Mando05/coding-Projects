@@ -1,177 +1,55 @@
-from kivy.app import App
-from kivy.uix.label import Label
-from kivy.uix.button import Button
-from kivy.uix.textinput import TextInput
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.scrollview import ScrollView
-from kivy.uix.screenmanager import ScreenManager, Screen
-from kivy.uix.image import Image
+import requests
+from bs4 import BeautifulSoup
+import csv
 
-# Sample plant and crop data
-plant_data = {
-    "Aloe Vera": {"family": "Asphodelaceae", "image": "images/alo vera.jpg", "soil": "Sandy, well-draining", "water": "Infrequent", "sunlight": "Full to partial", "origin": "Arabian Peninsula"},
-    "Haworthia": {"family": "Asphodelaceae", "image": "images/Hawt.jpg", "soil": "Sandy, well-draining", "water": "Infrequent", "sunlight": "Partial shade", "origin": "South Africa"},
-    "Gasteria": {"family": "Asphodelaceae", "image": "images/Gast.jpg", "soil": "Sandy, well-draining", "water": "Infrequent", "sunlight": "Partial shade", "origin": "South Africa"},
-    "Bulbine": {"family": "Asphodelaceae", "image": "images/Bulbine.jpg", "soil": "Well-draining", "water": "Infrequent", "sunlight": "Full sun", "origin": "South Africa"},
-    "Tomato": {"family": "Solanaceae", "image": "images/Tomato.jpg", "soil": "Loamy, well-drained", "water": "Regular", "sunlight": "Full", "origin": "South America"},
-    "Potato": {"family": "Solanaceae", "image": "images/Potato.jpg", "soil": "Sandy, well-drained", "water": "Regular", "sunlight": "Full", "origin": "South America"},
-    "Eggplant": {"family": "Solanaceae", "image": "images/Eggplant.jpg", "soil": "Loamy, well-drained", "water": "Regular", "sunlight": "Full", "origin": "India"},
-    "Pepper": {"family": "Solanaceae", "image": "images/Bellpeper.jpg", "soil": "Loamy, well-drained", "water": "Regular", "sunlight": "Full", "origin": "South America"},
-    "Cactus": {"family": "Cactaceae", "image": "images/Cactus.jpg", "soil": "Sandy, well-drained", "water": "Very infrequent", "sunlight": "Full", "origin": "Americas"},
-    "Opuntia": {"family": "Cactaceae", "image": "images/Tuna.jpg", "soil": "Sandy, well-drained", "water": "Very infrequent", "sunlight": "Full", "origin": "Americas"},
-    "Echinocactus": {"family": "Cactaceae", "image": "images/Mini.jpg", "soil": "Sandy, well-drained", "water": "Very infrequent", "sunlight": "Full", "origin": "Mexico"},
-    "Mammillaria": {"family": "Cactaceae", "image": "images/chunky.jpg", "soil": "Sandy, well-drained", "water": "Very infrequent", "sunlight": "Full", "origin": "Mexico"},
-    "Lettuce": {"family": "Asteraceae", "image": "images/Lettuce.jpg", "soil": "Loamy, well-drained", "water": "Regular", "sunlight": "Partial", "origin": "Mediterranean"},
-    "Sunflower": {"family": "Asteraceae", "image": "images/sunflower.jpg", "soil": "Well-drained", "water": "Moderate", "sunlight": "Full", "origin": "North America"},
-    "Marigold": {"family": "Asteraceae", "image": "images/mari.jpg", "soil": "Well-drained", "water": "Moderate", "sunlight": "Full", "origin": "Americas"},
-    "Zinnia": {"family": "Asteraceae", "image": "images/zin.jpeg", "soil": "Well-drained", "water": "Moderate", "sunlight": "Full", "origin": "Mexico"},
-}
+# Define the URL
+url = 'https://www.gardencentermarketing.com/Top-100-Plant-Downloads'
 
+# Send a GET request to fetch the HTML content
+response = requests.get(url)
+if response.status_code != 200:
+    raise Exception(f"Failed to load page {url}")
 
-class HomeScreen(Screen):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        layout = BoxLayout(orientation='vertical')
+# Parse the HTML content
+soup = BeautifulSoup(response.text, 'html.parser')
 
-        # Search Bar
-        search_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=40)
-        self.search_input = TextInput(multiline=False, hint_text="Search plants/crops")
-        search_button = Button(text="Search")
-        search_button.bind(on_press=self.search_plant)
-        search_layout.add_widget(self.search_input)
-        search_layout.add_widget(search_button)
-        layout.add_widget(search_layout)
+# Initialize a list to store plant data
+plants = []
 
-        scroll_view = ScrollView()
-        plant_list = BoxLayout(orientation='vertical', size_hint_y=None)
-        plant_list.bind(minimum_height=plant_list.setter('height'))
+# Find the container that holds the plant information
+plant_list_section = soup.find('div', class_='plant-list')
+if plant_list_section:
+    # Iterate over each plant item
+    plant_items = plant_list_section.find_all('div', class_='plant-item')
+    for plant in plant_items:
+        # Extract plant name
+        name_tag = plant.find('h2')
+        name = name_tag.text.strip() if name_tag else 'No name available'
+        
+        # Extract plant description
+        description_tag = plant.find('p', class_='description')
+        description = description_tag.text.strip() if description_tag else 'No description available'
+        
+        # Extract image URL
+        image_tag = plant.find('img')
+        image_url = image_tag['src'].strip() if image_tag and 'src' in image_tag.attrs else 'No image available'
+        
+        # Append the extracted data to the plants list
+        plants.append({'name': name, 'description': description, 'image_url': image_url})
+else:
+    raise Exception("Could not find the plant list section on the page.")
 
-        for plant_name in plant_data:
-            plant_button = Button(text=plant_name, size_hint_y=None, height=50)
-            plant_button.bind(on_press=lambda instance, name=plant_name: self.show_plant_info(name))
-            plant_list.add_widget(plant_button)
+# Define the CSV file name and columns
+csv_file = 'top_100_plants.csv'
+csv_columns = ['name', 'description', 'image_url']
 
-        scroll_view.add_widget(plant_list)
-        layout.add_widget(scroll_view)
-
-        self.add_widget(layout)
-
-    def search_plant(self, instance):
-        search_term = self.search_input.text.lower()
-        for plant_name in plant_data:
-            if search_term in plant_name.lower():
-                self.show_plant_info(plant_name)
-                return  
-
-    def show_plant_info(self, plant_name):
-        self.manager.current = 'plant_info'
-        self.manager.get_screen('plant_info').display_plant(plant_name)
-
-class PlantInfoScreen(Screen):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        layout = BoxLayout(orientation='vertical')
-
-        self.image = Image()
-        layout.add_widget(self.image)
-
-        self.info_label = Label(text="")
-        layout.add_widget(self.info_label)
-
-        back_button = Button(text="Back", size_hint_y=None, height=50)
-        back_button.bind(on_press=lambda _: setattr(self.manager, 'current', 'home'))
-        layout.add_widget(back_button)
-
-        self.add_widget(layout)
-
-    def display_plant(self, plant_name):
-        plant = plant_data[plant_name]
-        self.info_label.text = (
-            f"Soil: {plant['soil']}\n"
-            f"Water: {plant['water']}\n"
-            f"Sunlight: {plant['sunlight']}\n"
-            f"Origin: {plant['origin']}"
-        )
-        if plant['image']:
-            self.image.source = plant['image']
-        else:
-            self.image.source = 'image/no_image_available.png'
-
-class CropScreen(Screen):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        layout = BoxLayout(orientation='vertical')
-        crop_label = Label(text="Tomato\nLettuce")
-        layout.add_widget(crop_label)
-
-        back_button = Button(text="Back", size_hint_y=None, height=50)
-        back_button.bind(on_press=lambda _: setattr(self.manager, 'current', 'home'))
-        layout.add_widget(back_button)
-
-        self.add_widget(layout)
-
-class WaterCalcScreen(Screen):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        layout = BoxLayout(orientation='vertical')
-
-        layout.add_widget(Label(text="Land Size (sq ft):"))
-        self.land_size = TextInput(multiline=False)
-        layout.add_widget(self.land_size)
-
-        layout.add_widget(Label(text="Plant Name:"))
-        self.plant_name = TextInput(multiline=False)
-        layout.add_widget(self.plant_name)
-
-        calc_button = Button(text="Calculate Water Needs")
-        calc_button.bind(on_press=self.calculate_water)
-        layout.add_widget(calc_button)
-
-        self.result_label = Label(text="")
-        layout.add_widget(self.result_label)
-
-        back_button = Button(text="Back", size_hint_y=None, height=50)
-        back_button.bind(on_press=lambda _: setattr(self.manager, 'current', 'home'))
-        layout.add_widget(back_button)
-
-        self.add_widget(layout)
-
-    def calculate_water(self, instance):
-        size = self.land_size.text
-        plant = self.plant_name.text
-        if size.isdigit() and plant in plant_data:
-            water_needed = int(size) * 0.2
-            self.result_label.text = f"Estimated water: {water_needed} gallons"
-        else:
-            self.result_label.text = "Invalid input"
-
-class CultivateGro(App):
-    def build(self):
-        sm = ScreenManager()
-        sm.add_widget(HomeScreen(name='home'))
-        sm.add_widget(PlantInfoScreen(name='plant_info'))
-        sm.add_widget(CropScreen(name='crop'))
-        sm.add_widget(WaterCalcScreen(name='water_calc'))
-
-        bottom_bar = BoxLayout(size_hint=(1, None), height=60)
-        home_button = Button(text="Home")
-        crop_button = Button(text="Crops")
-        water_calc_button = Button(text="Water Calc")
-
-        home_button.bind(on_press=lambda _: setattr(sm, 'current', 'home'))
-        crop_button.bind(on_press=lambda _: setattr(sm, 'current', 'crop'))
-        water_calc_button.bind(on_press=lambda _: setattr(sm, 'current', 'water_calc'))
-
-        bottom_bar.add_widget(home_button)
-        bottom_bar.add_widget(crop_button)
-        bottom_bar.add_widget(water_calc_button)
-
-        main_layout = BoxLayout(orientation='vertical')
-        main_layout.add_widget(sm)
-        main_layout.add_widget(bottom_bar)
-
-        return main_layout  # <<<<<< THIS MAKES THE APP SHOW UP!
-
-if __name__ == "__main__":
-    CultivateGro().run()
-
+# Write the data to the CSV file
+try:
+    with open(csv_file, 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
+        writer.writeheader()
+        for plant in plants:
+            writer.writerow(plant)
+    print(f"Data successfully written to {csv_file}")
+except IOError as e:
+    print(f"I/O error occurred: {e}")
