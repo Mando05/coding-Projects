@@ -13,7 +13,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.graphics import Color, Rectangle
 from kivy.uix.image import AsyncImage
-
+import difflib 
 import csv
 
 CSV_FILE = 'plants.csv'
@@ -231,13 +231,23 @@ class HomeScreen(Screen):
     def search_plant(self, _):
         search_term = self.search_input.text.strip().lower()
 
-        # Check if the plant exists
-        for plant in plant_data:
-            if search_term in plant['name'].lower():
-                self.show_plant_info(plant['name'])
+        if not search_term:
+            return  # Don't search if the input is empty
+
+        # Get plant names from the dataset
+        plant_names = [plant['name'].lower() for plant in plant_data]
+
+        # Find the closest match
+        closest_match = difflib.get_close_matches(search_term, plant_names, n=1, cutoff=0.6)
+
+        if closest_match:
+            # Find the actual plant object from the dataset
+            plant_name = next((plant['name'] for plant in plant_data if plant['name'].lower() == closest_match[0]), None)
+            if plant_name:
+                self.show_plant_info(plant_name)
                 return
 
-        # If not found, prompt user to add the plant
+        # If no match is found, prompt user to add the plant
         self.manager.get_screen('add_plant').set_plant_name(search_term)
         self.manager.current = 'add_plant'
 
