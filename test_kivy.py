@@ -10,7 +10,7 @@ from kivy.uix.filechooser import FileChooserIconView  # Import for file selectio
 from kivy.uix.popup import Popup
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.floatlayout import FloatLayout
-from kivy.graphics import Color, Rectangle 
+from kivy.graphics import Color, Rectangle, RoundedRectangle
 
 #comment
 
@@ -155,7 +155,7 @@ class HomeScreen(Screen):
 
         # Scrollable Vertical List
         scroll_view = ScrollView()
-        plant_list = GridLayout(cols = 1, size_hint_y=None, padding=[325, 95, 100, 65], spacing = 10,
+        plant_list = GridLayout(cols = 1, size_hint_y=None, padding=[355, 100, 110, 75], spacing = 10,
              pos_hint={'center_x': 0.5})  # Center the content horizontally
         plant_list.bind(minimum_height=plant_list.setter('height'))
         # Center the scroll view within a FloatLayout
@@ -165,7 +165,7 @@ class HomeScreen(Screen):
             plant_card = Button(
             text=plant_name,
             size_hint_x=None,  # Let the width be determined by the content
-            width=400,  # Set a fixed width for the button
+            width=300,  # Set a fixed width for the button
             size_hint_y=None,
             height=150,
             background_color=(0.2, 0.8, 0.4, 1),
@@ -225,10 +225,16 @@ class PlantInfoScreen(Screen):
         super().__init__(**kwargs)
         layout = BoxLayout(orientation='vertical')
 
-        self.image = Image()
+        # Set background color to white
+        with self.canvas.before:
+            Color(1, 1, 1, 1)  # White color (RGBA)
+            self.rect = Rectangle(size=self.size, pos=self.pos)
+        self.bind(size=self._update_rect, pos=self._update_rect)
+
+        self.image = Image(size=(self.width + 10, self.height + 10))
         layout.add_widget(self.image)
 
-        self.info_label = Label(text="", halign="left", valign="top")
+        self.info_label = Label(text="", halign="left", valign="top", color=(0, 0, 0, 1), markup=True)
         layout.add_widget(self.info_label)
 
         back_button = Button(text="Back", size_hint_y=None, height=50)
@@ -236,6 +242,10 @@ class PlantInfoScreen(Screen):
         layout.add_widget(back_button)
 
         self.add_widget(layout)
+
+    def _update_rect(self, instance, value):
+        self.rect.pos = instance.pos
+        self.rect.size = instance.size
 
     def display_plant(self, plant_name):
         plant = plant_data[plant_name]
@@ -247,10 +257,10 @@ class PlantInfoScreen(Screen):
             self.image.source = "default.jpg"  # A default image if none is provided
 
         self.info_label.text = (
-            f"Soil: {plant['soil']}\n"
-            f"Water: {plant['water']}\n"
-            f"Sunlight: {plant['sunlight']}\n"
-            f"Origin: {plant['origin']}"
+            f"[b]Soil:[/b] {plant['soil']}\n"
+            f"[b]Water:[/b] {plant['water']}\n"
+            f"[b]Sunlight:[/b] {plant['sunlight']}\n"
+            f"[b]Origin:[/b] {plant['origin']}"
         )
 
 class GardenProgressScreen(Screen):
@@ -306,26 +316,31 @@ class CropScreen(Screen):
 class WaterCalcScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        layout = BoxLayout(orientation='vertical')
+        layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
 
+        # Land Size Input
         layout.add_widget(Label(text="Land Size (sq ft):"))
         self.land_size = TextInput(multiline=False)
         layout.add_widget(self.land_size)
 
+        # Plant Name Input
         layout.add_widget(Label(text="Plant Name:"))
         self.plant_name = TextInput(multiline=False)
         layout.add_widget(self.plant_name)
 
+        # Calculate Button
         calc_button = Button(text="Calculate Water Needs")
         calc_button.bind(on_press=self.calculate_water)
         layout.add_widget(calc_button)
 
+        # Result Label
         self.result_label = Label(text="")
         layout.add_widget(self.result_label)
 
-        back_button = Button(text="Back", size_hint_y=None, height=50)
-        back_button.bind(on_press=lambda _: setattr(self.manager, 'current', 'home'))
-        layout.add_widget(back_button)
+        # Placeholder Button - Prints "Hello" to terminal when clicked
+        placeholder_button = Button(text="Click Me", size_hint_y=None, height=50)
+        placeholder_button.bind(on_press=lambda _: print("Hello"))
+        layout.add_widget(placeholder_button)
 
         self.add_widget(layout)
 
