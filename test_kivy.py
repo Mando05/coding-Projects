@@ -1,55 +1,237 @@
-import requests
-from bs4 import BeautifulSoup
+from kivy.app import App
+from kivy.uix.image import AsyncImage
+from kivy.uix.label import Label
+from kivy.uix.button import Button
+from kivy.uix.textinput import TextInput
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.image import Image
+from kivy.uix.filechooser import FileChooserIconView
+from kivy.uix.popup import Popup
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.floatlayout import FloatLayout
+from kivy.graphics import Color, Rectangle
 import csv
 
-# Define the URL
-url = 'https://www.gardencentermarketing.com/Top-100-Plant-Downloads'
+CSV_FILE = 'plants.csv'
 
-# Send a GET request to fetch the HTML content
-response = requests.get(url)
-if response.status_code != 200:
-    raise Exception(f"Failed to load page {url}")
+# Read the CSV file and store the data
+def read_csv(file_path):
+    plants_data = []
+    with open(file_path, newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            plants_data.append({
+                'name': row['name'],
+                'description': row['description'],
+                'image_url': row['image_url']
+            })
+    return plants_data
 
-# Parse the HTML content
-soup = BeautifulSoup(response.text, 'html.parser')
+plant_data = read_csv('plants.csv')
 
-# Initialize a list to store plant data
-plants = []
 
-# Find the container that holds the plant information
-plant_list_section = soup.find('div', class_='plant-list')
-if plant_list_section:
-    # Iterate over each plant item
-    plant_items = plant_list_section.find_all('div', class_='plant-item')
-    for plant in plant_items:
-        # Extract plant name
-        name_tag = plant.find('h2')
-        name = name_tag.text.strip() if name_tag else 'No name available'
+class AddPlantScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.layout = BoxLayout(orientation='vertical')
+
+        self.plant_name_label = Label(text="Adding: ")
+        self.layout.add_widget(self.plant_name_label)
+
+        self.fields = {}
+        for field in ["Family", "Soil", "Water", "Sunlight", "Origin"]:
+            self.layout.add_widget(Label(text=field + ":"))
+            input_field = TextInput(multiline=False)
+            self.layout.add_widget(input_field)
+            self.fields[field.lower()] = input_field
+
+        # Image upload button
+        self.image_path = ""  # Store the selected image path
+        self.image_button = Button(text="Upload Image")
+        self.image_button.bind(on_press=self.open_file_chooser)
+        self.layout.add_widget(self.image_button)
+
+        save_button = Button(text="Save Plant")
+        save_button.bind(on_press=self.save_plant)
+        self.layout.add_widget(save_button)
+
+        back_button = Button(text="Back")
+        back_button.bind(on_press=lambda _: setattr(self.manager, 'current', 'home'))
+        self.layout.add_widget(back_button)
+
+        self.add_widget(self.layout)
+
+    def set_plant_name(self, plant_name):
+        """Set the plant name when navigating to this screen"""
+        self.plant_name_label.text = f"Adding: {plant_name}"
+        self.plant_name = plant_name
+
+    def open_file_chooser(self, instance):
+        """Open a file chooser popup for image selection"""
+        content = FileChooserIconView()
+        popup = Popup(title="Select Image", content=content, size_hint=(0.9, 0.9))
+
+        def select_image(selection):
+            if selection:
+                self.image_path = selection[0]
+                self.image_button.text = "Image Selected"  # Update button text
+            popup.dismiss()
+
+        content.bind(on_submit=lambda _, selection, __: select_image(selection))
+        popup.open()
+
+    def save_plant(self, instance):
+        """Save the new plant information"""
+        plant[plant_name] = {
+            "family": self.fields["family"].text,
+            "soil": self.fields["soil"].text,
+            "water": self.fields["water"].text,
+            "sunlight": self.fields["sunlight"].text,
+            "origin": self.fields["origin"].text,
+            "image": self.image_path  # Save image path
+        }
+        self.manager.current = 'home'  # Go back home after saving
+
+
+class PlantDetailScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        layout = BoxLayout(orientation='vertical')
+
+        # Image display
+        self.image = AsyncImage()
+        layout.add_widget(self.image)
+
+        # Add ScrollView to handle text overflow
+        scroll_view = ScrollView(size_hint=(1, None), height=400)
+        self.info_label = Label(text="", halign="left", valign="top", size_hint_y=None)
+        self.info_label.bind(texture_size=self.info_label.setter('size'))
+        scroll_view.add_widget(self.info_label)
+
+        layout.add_widget(scroll_view)
+
+        back_button = Button(text="Back", size_hint_y=None, height=50)
+        back_button.bind(on_press=lambda _: setattr(self.manager, 'current', 'home'))
+        layout.add_widget(back_button)
+
+        self.add_widget(layout)
+
+    def display_plant(self, plant_name):
+        # Find the plant in the CSV data
+        plant = next((p for p in plant_data if p['name'] == plant_name), None)
+        if plant:
+            # Display plant image
+            self.image.source = plant['image_url']
+
+            # Display plant description
+            self.info_label.text = f"Name: {plant['name']}\n\nDescription:\n{plant['description']}"
+
+
+
+class HomeScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        layout = BoxLayout(orientation='vertical', padding=50, spacing=0)
         
-        # Extract plant description
-        description_tag = plant.find('p', class_='description')
-        description = description_tag.text.strip() if description_tag else 'No description available'
-        
-        # Extract image URL
-        image_tag = plant.find('img')
-        image_url = image_tag['src'].strip() if image_tag and 'src' in image_tag.attrs else 'No image available'
-        
-        # Append the extracted data to the plants list
-        plants.append({'name': name, 'description': description, 'image_url': image_url})
-else:
-    raise Exception("Could not find the plant list section on the page.")
+        # Set background color
+        with layout.canvas.before:
+            Color(1, 1, 1, 1)  # White background
+            self.rect = Rectangle(size=layout.size, pos=layout.pos)
+        layout.bind(size=self._update_rect, pos=self._update_rect)
 
-# Define the CSV file name and columns
-csv_file = 'top_100_plants.csv'
-csv_columns = ['name', 'description', 'image_url']
+        # Centered Search Bar
+        float_layout = FloatLayout(size_hint=(1, 1))
+        search_layout = BoxLayout(orientation='horizontal', size_hint=(None, None), size=(400, 58), spacing=10, pos_hint={'center_x': 0.5, 'center_y': 0.9})
+        self.search_input = TextInput(multiline=False, hint_text="Search plants/crops", size_hint_x=0.8, padding=(10, 10))
+        search_button = Button(text="Search", size_hint_x=0.2, size_hint_y=None, height=58, width=108, background_color=(0.1, 0.6, 0.2, 1))
+        search_button.bind(on_press=self.search_plant)
+        search_layout.add_widget(self.search_input)
+        search_layout.add_widget(search_button)
+        float_layout.add_widget(search_layout)
+        layout.add_widget(float_layout)
 
-# Write the data to the CSV file
-try:
-    with open(csv_file, 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
-        writer.writeheader()
-        for plant in plants:
-            writer.writerow(plant)
-    print(f"Data successfully written to {csv_file}")
-except IOError as e:
-    print(f"I/O error occurred: {e}")
+        # Scrollable Vertical List
+        scroll_view = ScrollView()
+        plant_list = GridLayout(cols = 1, size_hint_y=None, padding=[325, 95, 100, 65], spacing = 10,
+             pos_hint={'center_x': 0.5})  # Center the content horizontally
+        plant_list.bind(minimum_height=plant_list.setter('height'))
+        # Center the scroll view within a FloatLayout
+        float_layout = FloatLayout(size_hint=(1, None), height=600)  # Adjust height as needed
+
+        for plant in plant_data:
+            # Create a button for each plant card
+            plant_card = Button(
+                text=plant['name'],
+                size_hint_x=None,  # Let the width be determined by the content
+                width=400,  # Set a fixed width for the button
+                size_hint_y=None,
+                height=150,
+                background_color=(0.2, 0.8, 0.4, 1),
+                font_size=18,
+                padding=(10, 10),
+                background_normal='',
+                background_down=''
+            )
+            # When clicked, show more information
+            plant_card.bind(on_press=lambda _, name=plant['name']: self.show_plant_info(name))
+            plant_list.add_widget(plant_card)
+
+        scroll_view.add_widget(plant_list)
+        float_layout.add_widget(scroll_view)
+        layout.add_widget(float_layout)
+
+        # Floating Add Button
+        float_layout = FloatLayout()
+        add_button = Button(
+            text='+',
+            size_hint=(None, None),
+            size=(60, 60),
+            pos_hint={'right': 0.95, 'y': 0.05},
+            background_color=(0.9, 0.2, 0.2, 1),
+            font_size=24,
+            background_normal='',
+            background_down=''
+        )
+        add_button.bind(on_press=lambda _: setattr(self.manager, 'current', 'add_plant'))
+        float_layout.add_widget(add_button)
+        layout.add_widget(float_layout)
+
+        self.add_widget(layout)
+
+    def _update_rect(self, instance, value):
+        self.rect.pos = instance.pos
+        self.rect.size = instance.size
+
+    def show_plant_info(self, plant_name):
+        self.manager.get_screen('plant_info').display_plant(plant_name)
+        self.manager.current = 'plant_info'
+
+    def search_plant(self, _):
+        search_term = self.search_input.text.strip().lower()
+
+        # Check if the plant exists
+        for plant in plant_data:
+            if search_term in plant['name'].lower():
+                self.show_plant_info(plant['name'])
+                return
+
+        # If not found, prompt user to add the plant
+        self.manager.get_screen('add_plant').set_plant_name(search_term)
+        self.manager.current = 'add_plant'
+
+
+class PlantApp(App):
+    def build(self):
+        sm = ScreenManager()
+
+        sm.add_widget(HomeScreen(name='home'))
+        sm.add_widget(AddPlantScreen(name='add_plant'))
+        sm.add_widget(PlantDetailScreen(name='plant_info'))
+
+        return sm
+
+
+if __name__ == '__main__':
+    PlantApp().run()
