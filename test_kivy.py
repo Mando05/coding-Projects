@@ -153,28 +153,31 @@ class HomeScreen(Screen):
 
         # Scrollable Vertical List
         scroll_view = ScrollView()
-        plant_list = BoxLayout(orientation='vertical', size_hint_y=None, padding=[5, 0, 5, 0], spacing=10,
-                                 pos_hint={'center_x': 0.5})  # Center the content horizontally
+        plant_list = GridLayout(cols = 1, size_hint_y=None, padding=[325, 95, 100, 65], spacing = 10,
+             pos_hint={'center_x': 0.5})  # Center the content horizontally
         plant_list.bind(minimum_height=plant_list.setter('height'))
+        # Center the scroll view within a FloatLayout
+        float_layout = FloatLayout(size_hint=(1, None), height=600)  # Adjust height as needed
 
         for plant_name in plant_data:
             plant_card = Button(
-                text=plant_name,
-                size_hint_x=None,  # Let the width be determined by the content
-                width=300,  # Set a fixed width for the button
-                size_hint_y=None,
-                height=100,
-                background_color=(0.2, 0.8, 0.4, 1),
-                font_size=18,
-                padding=(10, 10),
-                background_normal='',
-                background_down=''
+            text=plant_name,
+            size_hint_x=None,  # Let the width be determined by the content
+            width=400,  # Set a fixed width for the button
+            size_hint_y=None,
+            height=150,
+            background_color=(0.2, 0.8, 0.4, 1),
+            font_size= 18,
+            padding=(10, 10),
+            background_normal='',
+            background_down=''
             )
             plant_card.bind(on_press=lambda _, name=plant_name: self.show_plant_info(name))
             plant_list.add_widget(plant_card)
 
         scroll_view.add_widget(plant_list)
-        layout.add_widget(scroll_view)
+        float_layout.add_widget(scroll_view)
+        layout.add_widget(float_layout)
 
         # Floating Add Button
         float_layout = FloatLayout()
